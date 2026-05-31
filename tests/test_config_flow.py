@@ -27,6 +27,17 @@ USER_INPUT = {
 }
 
 
+@pytest.fixture(autouse=True)
+def mark_conversation_loaded(hass: HomeAssistant) -> None:
+    """Mark the `conversation` dependency as set up.
+
+    Starting a config flow processes the integration's manifest dependencies;
+    the real `conversation` component can't fully initialise in the minimal
+    test environment, and these tests don't exercise it.
+    """
+    hass.config.components.add("conversation")
+
+
 async def test_user_flow_success(
     hass: HomeAssistant, mock_client: MagicMock
 ) -> None:
