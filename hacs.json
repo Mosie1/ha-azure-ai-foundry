@@ -1,0 +1,5 @@
+{
+  "name": "Azure AI Foundry",
+  "homeassistant": "2025.7.0",
+  "render_readme": true
+}

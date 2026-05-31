@@ -1,0 +1,7 @@
+pytest-homeassistant-custom-component
+openai==2.21.0
+
+# Runtime deps of the HA components our code imports (not pulled in by the
+# base homeassistant package). Needed so `conversation` imports during tests.
+hassil
+home-assistant-intents

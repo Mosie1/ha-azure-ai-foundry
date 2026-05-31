@@ -1,0 +1,140 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Azure AI Foundry",
+        "description": "Enter the endpoint and API key of your Azure AI Foundry / Azure OpenAI resource.",
+        "data": {
+          "endpoint": "Endpoint",
+          "api_key": "API key",
+          "api_version": "API version"
+        },
+        "data_description": {
+          "endpoint": "For example https://my-resource.openai.azure.com",
+          "api_version": "Pin a version that supports the Responses API and structured outputs."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Azure AI Foundry",
+        "description": "The API key for your Azure AI Foundry resource is no longer valid.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This endpoint is already configured",
+      "reauth_successful": "Re-authentication was successful"
+    }
+  },
+  "config_subentries": {
+    "conversation": {
+      "initiate_flow": {
+        "user": "Add conversation agent",
+        "reconfigure": "Reconfigure conversation agent"
+      },
+      "entry_type": "Conversation agent",
+      "step": {
+        "init": {
+          "title": "Conversation agent",
+          "data": {
+            "name": "Name",
+            "prompt": "Instructions",
+            "llm_hass_api": "Control Home Assistant",
+            "recommended": "Recommended model settings"
+          },
+          "data_description": {
+            "prompt": "Instruct how the LLM should respond. This can be a template."
+          }
+        },
+        "advanced": {
+          "title": "Model settings",
+          "data": {
+            "deployment_name": "Deployment name",
+            "model_family": "Model family",
+            "max_tokens": "Maximum tokens to return in response",
+            "temperature": "Temperature",
+            "top_p": "Top P"
+          },
+          "data_description": {
+            "deployment_name": "The Azure deployment name (not the model name).",
+            "model_family": "Forces the Responses vs Chat Completions API. Use Auto-detect unless your deployment name is non-standard."
+          }
+        },
+        "model": {
+          "title": "Advanced model settings",
+          "data": {
+            "reasoning_effort": "Reasoning effort"
+          },
+          "data_description": {
+            "reasoning_effort": "How many reasoning tokens the model should spend (reasoning models only)."
+          }
+        }
+      }
+    },
+    "ai_task_data": {
+      "initiate_flow": {
+        "user": "Add AI task agent",
+        "reconfigure": "Reconfigure AI task agent"
+      },
+      "entry_type": "AI task agent",
+      "step": {
+        "init": {
+          "title": "AI task agent",
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended model settings"
+          }
+        },
+        "advanced": {
+          "title": "Model settings",
+          "data": {
+            "deployment_name": "Deployment name",
+            "model_family": "Model family",
+            "max_tokens": "Maximum tokens to return in response",
+            "temperature": "Temperature",
+            "top_p": "Top P"
+          },
+          "data_description": {
+            "deployment_name": "The Azure deployment name (not the model name).",
+            "model_family": "Forces the Responses vs Chat Completions API. Use Auto-detect unless your deployment name is non-standard."
+          }
+        },
+        "model": {
+          "title": "Advanced model settings",
+          "data": {
+            "reasoning_effort": "Reasoning effort",
+            "image_deployment": "Image deployment name",
+            "image_size": "Image size",
+            "image_quality": "Image quality"
+          },
+          "data_description": {
+            "reasoning_effort": "How many reasoning tokens the model should spend (reasoning models only).",
+            "image_deployment": "Deployment of a DALL-E / gpt-image model. Enables image generation when set."
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "model_family": {
+      "options": {
+        "auto": "Auto-detect",
+        "openai": "OpenAI (Responses API)",
+        "other": "Other (Chat Completions)"
+      }
+    },
+    "reasoning_effort": {
+      "options": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      }
+    }
+  }
+}
