@@ -10,7 +10,7 @@
           "api_version": "API version"
         },
         "data_description": {
-          "endpoint": "For example https://my-resource.openai.azure.com",
+          "endpoint": "The base URL of your Azure AI Foundry or Azure OpenAI resource, shown under Keys and Endpoint in the Azure portal.",
           "api_version": "Pin a version that supports the Responses API and structured outputs."
         }
       },

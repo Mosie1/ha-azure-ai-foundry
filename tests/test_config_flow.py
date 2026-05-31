@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import openai
 import pytest
@@ -36,14 +36,19 @@ async def test_user_flow_success(
     )
     assert result["type"] is FlowResultType.FORM
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], USER_INPUT
-    )
-    await hass.async_block_till_done()
+    with patch(
+        "custom_components.azure_ai_foundry.async_setup_entry", return_value=True
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], USER_INPUT
+        )
+        await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"] == USER_INPUT
-    subentry_types = {s["subentry_type"] for s in result["subentries"]}
+
+    entry = result["result"]
+    subentry_types = {s.subentry_type for s in entry.subentries.values()}
     assert subentry_types == {
         SUBENTRY_TYPE_CONVERSATION,
         SUBENTRY_TYPE_AI_TASK_DATA,
