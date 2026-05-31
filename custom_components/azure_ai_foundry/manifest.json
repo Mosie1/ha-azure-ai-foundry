@@ -2,13 +2,13 @@
   "domain": "azure_ai_foundry",
   "name": "Azure AI Foundry",
   "after_dependencies": ["assist_pipeline", "intent"],
-  "codeowners": ["@jorsigrammens"],
+  "codeowners": ["@Mosie1"],
   "config_flow": true,
   "dependencies": ["conversation"],
-  "documentation": "https://github.com/jorsigrammens/ha-azure-ai-foundry",
+  "documentation": "https://github.com/Mosie1/ha-azure-ai-foundry",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/jorsigrammens/ha-azure-ai-foundry/issues",
+  "issue_tracker": "https://github.com/Mosie1/ha-azure-ai-foundry/issues",
   "requirements": ["openai==2.21.0"],
   "version": "0.1.0"
 }
