@@ -11,7 +11,10 @@ from custom_components.azure_ai_foundry.const import (
     is_reasoning_deployment,
     resolve_api,
 )
-from custom_components.azure_ai_foundry.entity import _adjust_schema
+from custom_components.azure_ai_foundry.entity import (
+    _adjust_schema,
+    _decode_tool_arguments,
+)
 
 
 @pytest.mark.parametrize(
@@ -50,6 +53,23 @@ def test_resolve_api(family: str, deployment: str, expected: str) -> None:
 def test_is_reasoning_deployment(deployment: str, expected: bool) -> None:
     """Reasoning deployments are detected from their prefix."""
     assert is_reasoning_deployment(deployment) is expected
+
+
+def test_decode_tool_arguments_strips_empty_values() -> None:
+    """Blank optional slots are removed so HA intents don't reject them."""
+    raw = (
+        '{"name": "Kleine lamp bureau", "area": "Bureau", "floor": "", '
+        '"domain": ["light"], "device_class": [], "brightness": 0, '
+        '"on": false, "extra": {}}'
+    )
+    assert _decode_tool_arguments(raw) == {
+        "name": "Kleine lamp bureau",
+        "area": "Bureau",
+        "domain": ["light"],
+        # 0 and False are meaningful values and must be preserved.
+        "brightness": 0,
+        "on": False,
+    }
 
 
 def test_adjust_schema_enforces_strict_mode() -> None:

@@ -41,13 +41,27 @@ if TYPE_CHECKING:
 
 
 def _decode_tool_arguments(arguments: str) -> Any:
-    """Parse tool-call arguments, raising a friendly error on bad JSON."""
+    """Parse tool-call arguments, raising a friendly error on bad JSON.
+
+    Models often fill optional parameters with blank values (e.g.
+    ``"floor": ""`` or ``"device_class": []``). Home Assistant intents reject
+    those as invalid slot info, so empty values are stripped from the top-level
+    arguments object before the tool is called.
+    """
     try:
-        return json.loads(arguments)
+        data = json.loads(arguments)
     except json.JSONDecodeError as err:
         raise HomeAssistantError(
             f"Unexpected tool argument response: {err}"
         ) from err
+
+    if isinstance(data, dict):
+        return {
+            key: value
+            for key, value in data.items()
+            if value is not None and value != "" and value != [] and value != {}
+        }
+    return data
 
 
 def _adjust_schema(schema: dict[str, Any]) -> None:
