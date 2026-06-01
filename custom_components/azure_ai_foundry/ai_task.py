@@ -53,10 +53,9 @@ class AzureAIFoundryTaskEntity(
     ) -> None:
         """Initialize the entity."""
         super().__init__(entry, subentry)
-        features = (
-            ai_task.AITaskEntityFeature.GENERATE_DATA
-            | ai_task.AITaskEntityFeature.SUPPORT_ATTACHMENTS
-        )
+        # TODO: advertise SUPPORT_ATTACHMENTS once attachment content is
+        # converted into image/file inputs (see README roadmap).
+        features = ai_task.AITaskEntityFeature.GENERATE_DATA
         if subentry.data.get(CONF_IMAGE_DEPLOYMENT):
             features |= ai_task.AITaskEntityFeature.GENERATE_IMAGE
         self._attr_supported_features = features

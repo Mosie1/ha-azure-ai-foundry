@@ -64,6 +64,17 @@ For each agent you set:
 - Image generation uses `client.images.generate` against your image deployment; size/quality options differ between `dall-e-3` and `gpt-image-1` — custom values are allowed and any API error is surfaced.
 - Microsoft Entra ID authentication is not yet supported (API key only).
 
+## Roadmap / TODO
+
+- **Attachment support** — convert attachment content (images, PDFs) into
+  image/file inputs for both the Responses and Chat Completions APIs, then
+  re-advertise `AITaskEntityFeature.SUPPORT_ATTACHMENTS` on the AI Task entity
+  (and handle attachments on the conversation path). The official OpenAI
+  integration's `async_prepare_files_for_prompt` is a good reference.
+- **Microsoft Entra ID authentication** (currently API key only).
+- **Streaming responses** (the integration currently returns the full message
+  at once rather than token-by-token).
+
 ## Official integration / brand assets
 
 For a future Home Assistant core submission, brand assets (`icon.png`, `logo.png`) must be contributed to the [home-assistant/brands](https://github.com/home-assistant/brands) repository under `custom_integrations/azure_ai_foundry/`.
