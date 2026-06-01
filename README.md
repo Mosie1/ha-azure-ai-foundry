@@ -66,6 +66,15 @@ For each agent you set:
 
 ## Roadmap / TODO
 
+- **Anthropic Claude models** — Claude on Azure AI Foundry is served by
+  Anthropic's **native Messages API** (`<resource>.services.ai.azure.com/anthropic/v1/messages`),
+  not the OpenAI-compatible surface this integration uses, so Claude deployments
+  are not yet supported (they currently raise a clear error). Adding support
+  means a separate Anthropic-native path (the `anthropic` SDK, content-block
+  messages, tool-forced structured output, thinking blocks) modelled on the
+  official Home Assistant `anthropic` integration. Note: DeepSeek, Llama,
+  Mistral and Phi deployments *are* OpenAI-compatible and work via the existing
+  Chat Completions path.
 - **Attachment support** — convert attachment content (images, PDFs) into
   image/file inputs for both the Responses and Chat Completions APIs, then
   re-advertise `AITaskEntityFeature.SUPPORT_ATTACHMENTS` on the AI Task entity

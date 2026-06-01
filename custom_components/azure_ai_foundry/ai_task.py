@@ -139,10 +139,16 @@ class AzureAIFoundryTaskEntity(
             if raw_width.isdigit() and raw_height.isdigit():
                 width, height = int(raw_width), int(raw_height)
 
+        # gpt-image models can return a non-PNG format; honor it when reported.
+        output_format = getattr(response, "output_format", None) or getattr(
+            image, "output_format", None
+        )
+        mime_type = f"image/{output_format}" if output_format else "image/png"
+
         return ai_task.GenImageTaskResult(
             image_data=base64.b64decode(image.b64_json),
             conversation_id=chat_log.conversation_id,
-            mime_type="image/png",
+            mime_type=mime_type,
             width=width,
             height=height,
             model=image_deployment,

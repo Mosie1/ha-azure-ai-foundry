@@ -63,6 +63,17 @@ async def async_setup_entry(
     return True
 
 
+async def async_migrate_entry(
+    hass: HomeAssistant, entry: AzureAIFoundryConfigEntry
+) -> bool:
+    """Migrate an old config entry.
+
+    No migrations are needed yet; this exists so future schema changes can be
+    handled non-breakingly via VERSION / MINOR_VERSION bumps.
+    """
+    return True
+
+
 async def async_unload_entry(
     hass: HomeAssistant, entry: AzureAIFoundryConfigEntry
 ) -> bool:

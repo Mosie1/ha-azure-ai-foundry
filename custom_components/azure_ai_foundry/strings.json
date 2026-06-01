@@ -37,6 +37,9 @@
         "reconfigure": "Reconfigure conversation agent"
       },
       "entry_type": "Conversation agent",
+      "abort": {
+        "entry_not_loaded": "Cannot configure the agent while the integration is not loaded. Please try again later."
+      },
       "step": {
         "init": {
           "title": "Conversation agent",
@@ -81,6 +84,9 @@
         "reconfigure": "Reconfigure AI task agent"
       },
       "entry_type": "AI task agent",
+      "abort": {
+        "entry_not_loaded": "Cannot configure the agent while the integration is not loaded. Please try again later."
+      },
       "step": {
         "init": {
           "title": "AI task agent",

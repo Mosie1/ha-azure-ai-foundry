@@ -46,6 +46,9 @@ MODEL_FAMILY_OTHER: Final = "other"
 OPENAI_FAMILY_PREFIXES: Final = ("gpt", "o1", "o3", "o4", "chatgpt")
 # Deployment-name prefixes that need reasoning handling (no temperature/top_p)
 REASONING_PREFIXES: Final = ("o1", "o3", "o4", "gpt-5")
+# Anthropic Claude models on Foundry use the native Messages API (not the
+# OpenAI-compatible surface), which this integration does not support yet.
+ANTHROPIC_PREFIXES: Final = ("claude",)
 
 # Recommended defaults
 RECOMMENDED_DEPLOYMENT_NAME: Final = "gpt-4o-mini"
@@ -100,3 +103,8 @@ def resolve_api(family: str, deployment: str) -> Literal["responses", "chat"]:
 def is_reasoning_deployment(deployment: str) -> bool:
     """Return True if the deployment name looks like a reasoning model."""
     return deployment.lower().startswith(REASONING_PREFIXES)
+
+
+def is_anthropic_deployment(deployment: str) -> bool:
+    """Return True if the deployment name looks like an Anthropic Claude model."""
+    return deployment.lower().startswith(ANTHROPIC_PREFIXES)

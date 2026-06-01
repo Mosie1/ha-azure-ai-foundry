@@ -9,6 +9,7 @@ import openai
 import voluptuous as vol
 
 from homeassistant.config_entries import (
+    ConfigEntryState,
     ConfigFlow,
     ConfigFlowResult,
     ConfigSubentryFlow,
@@ -104,6 +105,7 @@ class AzureAIFoundryConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Azure AI Foundry."""
 
     VERSION = 1
+    MINOR_VERSION = 1
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -232,7 +234,22 @@ class AzureAIFoundrySubentryFlowHandler(ConfigSubentryFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
         """Collect name, prompt, LLM API and the recommended toggle."""
+        # The parent entry must be loaded to reconfigure a subentry.
+        if self._get_entry().state != ConfigEntryState.LOADED:
+            return self.async_abort(reason="entry_not_loaded")
+
+        # Drop any stored LLM API ids that are no longer available.
+        if suggested_apis := self.options.get(CONF_LLM_HASS_API):
+            if isinstance(suggested_apis, str):
+                suggested_apis = [suggested_apis]
+            valid_apis = {api.id for api in llm.async_get_apis(self.hass)}
+            self.options[CONF_LLM_HASS_API] = [
+                api for api in suggested_apis if api in valid_apis
+            ]
+
         if user_input is not None:
+            if not user_input.get(CONF_LLM_HASS_API):
+                user_input.pop(CONF_LLM_HASS_API, None)
             self.options.update(user_input)
             if user_input.get(CONF_RECOMMENDED):
                 return self._async_finish()

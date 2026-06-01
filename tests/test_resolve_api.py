@@ -2,23 +2,26 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
+import voluptuous as vol
+
+from homeassistant.util import slugify
 
 from custom_components.azure_ai_foundry.const import (
     MODEL_FAMILY_AUTO,
     MODEL_FAMILY_OPENAI,
     MODEL_FAMILY_OTHER,
+    is_anthropic_deployment,
     is_reasoning_deployment,
     resolve_api,
 )
-from types import SimpleNamespace
-
-import voluptuous as vol
-
 from custom_components.azure_ai_foundry.entity import (
     _UNSUPPORTED_TOOL_SCHEMA_KEYS,
     _adjust_schema,
     _decode_tool_arguments,
+    _format_structured_output,
     _format_tool_parameters,
 )
 
@@ -59,6 +62,21 @@ def test_resolve_api(family: str, deployment: str, expected: str) -> None:
 def test_is_reasoning_deployment(deployment: str, expected: bool) -> None:
     """Reasoning deployments are detected from their prefix."""
     assert is_reasoning_deployment(deployment) is expected
+
+
+@pytest.mark.parametrize(
+    ("deployment", "expected"),
+    [
+        ("claude-sonnet-4-6", True),
+        ("claude-3-5-sonnet", True),
+        ("Claude-Opus", True),
+        ("gpt-4o-mini", False),
+        ("deepseek-r1", False),
+    ],
+)
+def test_is_anthropic_deployment(deployment: str, expected: bool) -> None:
+    """Claude deployments are detected so they raise a clear error."""
+    assert is_anthropic_deployment(deployment) is expected
 
 
 def test_decode_tool_arguments_strips_empty_values() -> None:
@@ -136,12 +154,32 @@ def test_reasoning_item_round_trips_before_function_call() -> None:
     assert items[0]["encrypted_content"] == "ENC"
 
 
-def test_adjust_schema_enforces_strict_mode() -> None:
-    """Objects get additionalProperties:false and all keys required."""
+def test_adjust_schema_strict_mode_with_optional_fields() -> None:
+    """All props become required; originally-optional ones become nullable."""
+    schema = {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+            "name": {"type": "string"},
+            "note": {"type": "string"},  # optional -> should become nullable
+        },
+    }
+    _adjust_schema(schema)
+
+    assert schema["additionalProperties"] is False
+    # Strict mode: every property must be listed in required.
+    assert set(schema["required"]) == {"name", "note"}
+    # Originally-required field keeps its plain type.
+    assert schema["properties"]["name"]["type"] == "string"
+    # Originally-optional field is made nullable to preserve optionality.
+    assert schema["properties"]["note"]["type"] == ["string", "null"]
+
+
+def test_adjust_schema_recurses_objects_and_arrays() -> None:
+    """Nested objects and array items are adjusted too."""
     schema = {
         "type": "object",
         "properties": {
-            "name": {"type": "string"},
             "nested": {
                 "type": "object",
                 "properties": {"value": {"type": "integer"}},
@@ -157,11 +195,17 @@ def test_adjust_schema_enforces_strict_mode() -> None:
     }
     _adjust_schema(schema)
 
-    assert schema["additionalProperties"] is False
-    assert set(schema["required"]) == {"name", "nested", "items"}
     assert schema["properties"]["nested"]["additionalProperties"] is False
     assert schema["properties"]["nested"]["required"] == ["value"]
-    assert (
-        schema["properties"]["items"]["items"]["additionalProperties"] is False
-    )
+    assert schema["properties"]["items"]["items"]["additionalProperties"] is False
     assert schema["properties"]["items"]["items"]["required"] == ["x"]
+
+
+def test_format_structured_output_slugifies_name() -> None:
+    """A task name with spaces becomes an API-safe schema name."""
+    result = _format_structured_output(
+        "My Task Name", vol.Schema({vol.Required("x"): str}), None
+    )
+    assert result["name"] == slugify("My Task Name")
+    assert result["strict"] is True
+    assert result["schema"]["type"] == "object"

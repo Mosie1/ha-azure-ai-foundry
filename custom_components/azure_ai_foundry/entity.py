@@ -16,6 +16,7 @@ from homeassistant.config_entries import ConfigSubentry
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr, llm
 from homeassistant.helpers.entity import Entity
+from homeassistant.util import slugify
 
 from .const import (
     CONF_DEPLOYMENT_NAME,
@@ -33,6 +34,7 @@ from .const import (
     RECOMMENDED_REASONING_EFFORT,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
+    is_anthropic_deployment,
     is_reasoning_deployment,
     resolve_api,
 )
@@ -68,16 +70,28 @@ def _decode_tool_arguments(arguments: str) -> Any:
 def _adjust_schema(schema: dict[str, Any]) -> None:
     """Recursively make a JSON schema compatible with strict mode.
 
-    Azure/OpenAI strict structured output requires ``additionalProperties:
-    false`` and every property listed in ``required`` on each object.
+    Strict structured output requires every property listed in ``required``.
+    To preserve optionality, properties that were *not* originally required are
+    made nullable (their type becomes ``[type, "null"]``) before being added to
+    ``required`` -- mirroring the official ``open_router`` integration. We also
+    set ``additionalProperties: false`` on objects.
     """
     if schema.get("type") == "object":
         if "properties" not in schema:
             return
         schema["additionalProperties"] = False
-        schema["required"] = list(schema["properties"])
-        for child in schema["properties"].values():
-            _adjust_schema(child)
+        required = schema.setdefault("required", [])
+        for prop, prop_schema in schema["properties"].items():
+            _adjust_schema(prop_schema)
+            if prop not in required:
+                # Optional field: keep it optional by allowing null, then mark
+                # it required (strict mode requires every property in `required`).
+                prop_type = prop_schema.get("type")
+                if isinstance(prop_type, str):
+                    prop_schema["type"] = [prop_type, "null"]
+                elif isinstance(prop_type, list) and "null" not in prop_type:
+                    prop_schema["type"] = [*prop_type, "null"]
+                required.append(prop)
     elif schema.get("type") == "array" and "items" in schema:
         _adjust_schema(schema["items"])
 
@@ -93,7 +107,7 @@ def _format_structured_output(
         ),
     )
     _adjust_schema(converted)
-    return {"name": name, "schema": converted, "strict": True}
+    return {"name": slugify(name or "output"), "schema": converted, "strict": True}
 
 
 # Keys the function-tool schema validator rejects at the top level. Some HA
@@ -383,6 +397,14 @@ class AzureAIFoundryBaseLLMEntity(Entity):
         max_iterations: int = MAX_TOOL_ITERATIONS,
     ) -> None:
         """Generate an answer for the chat log via the resolved API."""
+        deployment = self.subentry.data.get(CONF_DEPLOYMENT_NAME, "")
+        if is_anthropic_deployment(deployment):
+            raise HomeAssistantError(
+                "Claude models on Azure AI Foundry use Anthropic's native "
+                "Messages API, which this integration does not support yet. "
+                "Use an OpenAI-compatible deployment (e.g. gpt-4o-mini) instead."
+            )
+
         if self._resolve_api() == "responses":
             await self._async_handle_responses_api(
                 chat_log, structure_name, structure, max_iterations
