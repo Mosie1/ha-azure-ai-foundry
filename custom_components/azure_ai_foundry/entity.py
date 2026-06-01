@@ -273,7 +273,7 @@ class AzureAIFoundryBaseLLMEntity(Entity):
         )
 
     @property
-    def _client(self) -> openai.AsyncAzureOpenAI:
+    def _client(self) -> openai.AsyncOpenAI:
         return self.entry.runtime_data
 
     def _resolve_api(self) -> Literal["responses", "chat"]:

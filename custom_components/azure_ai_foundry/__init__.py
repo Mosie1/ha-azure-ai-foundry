@@ -10,23 +10,26 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import get_async_client
 
-from .const import CONF_API_VERSION, CONF_ENDPOINT, LOGGER, RECOMMENDED_API_VERSION
+from .const import AZURE_API_VERSION, CONF_ENDPOINT, LOGGER
 
 PLATFORMS = (Platform.AI_TASK, Platform.CONVERSATION)
 
-type AzureAIFoundryConfigEntry = ConfigEntry[openai.AsyncAzureOpenAI]
+type AzureAIFoundryConfigEntry = ConfigEntry[openai.AsyncOpenAI]
 
 
-def _build_client(
-    hass: HomeAssistant, data: dict
-) -> openai.AsyncAzureOpenAI:
-    """Create an Azure OpenAI async client from config entry data."""
-    return openai.AsyncAzureOpenAI(
-        azure_endpoint=data[CONF_ENDPOINT],
-        # Azure requires an api-version; it is not exposed in the UI. A sensible
-        # default is used, but an override in entry data is honored if present.
-        api_version=data.get(CONF_API_VERSION, RECOMMENDED_API_VERSION),
+def _build_client(hass: HomeAssistant, data: dict) -> openai.AsyncOpenAI:
+    """Create an Azure AI Foundry client targeting the OpenAI v1 endpoint.
+
+    The classic ``AzureOpenAI`` client routes to ``/openai/...?api-version=...``
+    and rewrites chat calls to ``/deployments/<model>/...``; that surface has no
+    Responses API. We therefore point a plain ``AsyncOpenAI`` client at the
+    version-less v1 endpoint, which serves both Chat Completions and Responses.
+    """
+    endpoint = data[CONF_ENDPOINT].rstrip("/")
+    return openai.AsyncOpenAI(
+        base_url=f"{endpoint}/openai/v1/",
         api_key=data[CONF_API_KEY],
+        default_query={"api-version": AZURE_API_VERSION},
         http_client=get_async_client(hass),
     )
 

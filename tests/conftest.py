@@ -11,11 +11,9 @@ from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
 
 from custom_components.azure_ai_foundry.const import (
-    CONF_API_VERSION,
     CONF_ENDPOINT,
     DOMAIN,
     RECOMMENDED_AI_TASK_OPTIONS,
-    RECOMMENDED_API_VERSION,
     RECOMMENDED_CONVERSATION_OPTIONS,
     SUBENTRY_TYPE_AI_TASK_DATA,
     SUBENTRY_TYPE_CONVERSATION,
@@ -39,7 +37,6 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
         data={
             CONF_ENDPOINT: "https://example.openai.azure.com",
             CONF_API_KEY: "test-key",
-            CONF_API_VERSION: RECOMMENDED_API_VERSION,
         },
         subentries_data=[
             {
@@ -62,9 +59,9 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 @pytest.fixture
 def mock_client() -> Generator[MagicMock]:
-    """Patch the AsyncAzureOpenAI client used by the integration."""
+    """Patch the AsyncOpenAI client used by the integration."""
     with patch(
-        "custom_components.azure_ai_foundry.openai.AsyncAzureOpenAI"
+        "custom_components.azure_ai_foundry.openai.AsyncOpenAI"
     ) as mock_ctor:
         client = mock_ctor.return_value
         client.models.list = AsyncMock(return_value=[])

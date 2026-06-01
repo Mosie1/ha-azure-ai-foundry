@@ -13,10 +13,12 @@ LOGGER: logging.Logger = logging.getLogger(__package__)
 
 # Connection / main config entry
 CONF_ENDPOINT: Final = "endpoint"
-CONF_API_VERSION: Final = "api_version"
 # CONF_API_KEY is reused from homeassistant.const
 
-RECOMMENDED_API_VERSION: Final = "2024-10-21"
+# The integration targets Azure's version-less OpenAI v1 endpoint
+# (https://<resource>.openai.azure.com/openai/v1/). "preview" opts into the
+# newest features, including the Responses API.
+AZURE_API_VERSION: Final = "preview"
 
 # Subentry types
 SUBENTRY_TYPE_CONVERSATION: Final = "conversation"

@@ -17,7 +17,6 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_API_KEY, CONF_NAME
 from homeassistant.core import callback
 from homeassistant.helpers import llm
-from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
@@ -32,8 +31,8 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.typing import VolDictType
 
+from . import _build_client
 from .const import (
-    CONF_API_VERSION,
     CONF_DEPLOYMENT_NAME,
     CONF_ENDPOINT,
     CONF_IMAGE_DEPLOYMENT,
@@ -58,7 +57,6 @@ from .const import (
     MODEL_FAMILY_OTHER,
     REASONING_EFFORT_OPTIONS,
     RECOMMENDED_AI_TASK_OPTIONS,
-    RECOMMENDED_API_VERSION,
     RECOMMENDED_CONVERSATION_OPTIONS,
     RECOMMENDED_DEPLOYMENT_NAME,
     RECOMMENDED_IMAGE_QUALITY,
@@ -94,12 +92,7 @@ MODEL_FAMILY_SELECTOR = SelectSelector(
 
 async def _validate_connection(hass, data: dict[str, Any]) -> None:
     """Try to connect to the endpoint. Raises openai errors on failure."""
-    client = openai.AsyncAzureOpenAI(
-        azure_endpoint=data[CONF_ENDPOINT],
-        api_version=data.get(CONF_API_VERSION, RECOMMENDED_API_VERSION),
-        api_key=data[CONF_API_KEY],
-        http_client=get_async_client(hass),
-    )
+    client = _build_client(hass, data)
     try:
         await client.with_options(timeout=10.0).models.list()
     except openai.NotFoundError:

@@ -39,9 +39,10 @@ When you add the integration you provide:
 
 | Field | Example | Notes |
 | --- | --- | --- |
-| Endpoint | `https://my-resource.openai.azure.com` | Your Azure resource endpoint. |
+| Endpoint | `https://my-resource.openai.azure.com` | Your Azure resource endpoint. The integration appends `/openai/v1/` automatically. |
 | API key | `xxxxxxxx…` | From the Azure portal → *Keys and Endpoint*. |
-| API version | `2024-10-21` | Advanced. Pin a version that supports the Responses API and structured outputs. |
+
+The integration talks to Azure's version-less **OpenAI v1 endpoint** (`<endpoint>/openai/v1/`), so there is no API-version field to manage — this is what makes the Responses API (used for OpenAI-family models) work.
 
 After the entry is created, add one or more **agents** (subentries):
 
@@ -59,6 +60,7 @@ For each agent you set:
 
 ## Notes & limitations
 
+- The integration uses the Azure **OpenAI v1 endpoint** with `api-version=preview`. The Responses API (and therefore OpenAI-family deployments) is only available in [certain regions](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/responses) — if a `gpt-…` deployment returns `404 Resource not found`, either your region/resource doesn't support the Responses API or you can set that agent's **Model family** to *Other (Chat Completions)*.
 - Image generation uses `client.images.generate` against your image deployment; size/quality options differ between `dall-e-3` and `gpt-image-1` — custom values are allowed and any API error is surfaced.
 - Microsoft Entra ID authentication is not yet supported (API key only).
 
