@@ -13,7 +13,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.azure_ai_foundry.const import (
-    CONF_API_VERSION,
     CONF_ENDPOINT,
     DOMAIN,
     SUBENTRY_TYPE_AI_TASK_DATA,
@@ -23,7 +22,6 @@ from custom_components.azure_ai_foundry.const import (
 USER_INPUT = {
     CONF_ENDPOINT: "https://example.openai.azure.com",
     CONF_API_KEY: "test-key",
-    CONF_API_VERSION: "2024-10-21",
 }
 
 

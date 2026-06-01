@@ -80,9 +80,6 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_API_KEY): TextSelector(
             TextSelectorConfig(type=TextSelectorType.PASSWORD)
         ),
-        vol.Optional(
-            CONF_API_VERSION, default=RECOMMENDED_API_VERSION
-        ): str,
     }
 )
 
@@ -99,7 +96,7 @@ async def _validate_connection(hass, data: dict[str, Any]) -> None:
     """Try to connect to the endpoint. Raises openai errors on failure."""
     client = openai.AsyncAzureOpenAI(
         azure_endpoint=data[CONF_ENDPOINT],
-        api_version=data[CONF_API_VERSION],
+        api_version=data.get(CONF_API_VERSION, RECOMMENDED_API_VERSION),
         api_key=data[CONF_API_KEY],
         http_client=get_async_client(hass),
     )

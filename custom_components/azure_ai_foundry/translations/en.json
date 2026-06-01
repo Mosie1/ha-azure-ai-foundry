@@ -6,12 +6,10 @@
         "description": "Enter the endpoint and API key of your Azure AI Foundry / Azure OpenAI resource.",
         "data": {
           "endpoint": "Endpoint",
-          "api_key": "API key",
-          "api_version": "API version"
+          "api_key": "API key"
         },
         "data_description": {
-          "endpoint": "The base URL of your Azure AI Foundry or Azure OpenAI resource, shown under Keys and Endpoint in the Azure portal.",
-          "api_version": "Pin a version that supports the Responses API and structured outputs."
+          "endpoint": "The base URL of your Azure AI Foundry or Azure OpenAI resource, shown under Keys and Endpoint in the Azure portal."
         }
       },
       "reauth_confirm": {

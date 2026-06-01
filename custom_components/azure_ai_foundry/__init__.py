@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import get_async_client
 
-from .const import CONF_API_VERSION, CONF_ENDPOINT, LOGGER
+from .const import CONF_API_VERSION, CONF_ENDPOINT, LOGGER, RECOMMENDED_API_VERSION
 
 PLATFORMS = (Platform.AI_TASK, Platform.CONVERSATION)
 
@@ -23,7 +23,9 @@ def _build_client(
     """Create an Azure OpenAI async client from config entry data."""
     return openai.AsyncAzureOpenAI(
         azure_endpoint=data[CONF_ENDPOINT],
-        api_version=data[CONF_API_VERSION],
+        # Azure requires an api-version; it is not exposed in the UI. A sensible
+        # default is used, but an override in entry data is honored if present.
+        api_version=data.get(CONF_API_VERSION, RECOMMENDED_API_VERSION),
         api_key=data[CONF_API_KEY],
         http_client=get_async_client(hass),
     )
