@@ -95,6 +95,27 @@ def _format_structured_output(
     return {"name": name, "schema": converted, "strict": True}
 
 
+# Keys the function-tool schema validator rejects at the top level. Some HA
+# intents (e.g. HassStartTimer, which requires at least one of hours/minutes/
+# seconds) convert to a schema with one of these at the top level, which both
+# the Chat Completions and Responses APIs reject with a 400.
+_UNSUPPORTED_TOOL_SCHEMA_KEYS = ("oneOf", "anyOf", "allOf", "enum", "not")
+
+
+def _format_tool_parameters(
+    tool: llm.Tool, llm_api: llm.APIInstance
+) -> dict[str, Any]:
+    """Convert a tool's parameters, stripping unsupported top-level keys."""
+    schema = convert(tool.parameters, custom_serializer=llm_api.custom_serializer)
+    if any(key in schema for key in _UNSUPPORTED_TOOL_SCHEMA_KEYS):
+        schema = {
+            key: value
+            for key, value in schema.items()
+            if key not in _UNSUPPORTED_TOOL_SCHEMA_KEYS
+        }
+    return schema
+
+
 def _format_tools(
     llm_api: llm.APIInstance | None,
 ) -> list[dict[str, Any]] | None:
@@ -107,9 +128,7 @@ def _format_tools(
             "function": {
                 "name": tool.name,
                 "description": tool.description or "",
-                "parameters": convert(
-                    tool.parameters, custom_serializer=llm_api.custom_serializer
-                ),
+                "parameters": _format_tool_parameters(tool, llm_api),
             },
         }
         for tool in llm_api.tools
@@ -127,9 +146,7 @@ def _format_tools_responses(
             "type": "function",
             "name": tool.name,
             "description": tool.description or "",
-            "parameters": convert(
-                tool.parameters, custom_serializer=llm_api.custom_serializer
-            ),
+            "parameters": _format_tool_parameters(tool, llm_api),
         }
         for tool in llm_api.tools
     ]

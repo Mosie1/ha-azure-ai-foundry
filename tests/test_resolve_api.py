@@ -11,9 +11,15 @@ from custom_components.azure_ai_foundry.const import (
     is_reasoning_deployment,
     resolve_api,
 )
+from types import SimpleNamespace
+
+import voluptuous as vol
+
 from custom_components.azure_ai_foundry.entity import (
+    _UNSUPPORTED_TOOL_SCHEMA_KEYS,
     _adjust_schema,
     _decode_tool_arguments,
+    _format_tool_parameters,
 )
 
 
@@ -70,6 +76,35 @@ def test_decode_tool_arguments_strips_empty_values() -> None:
         "brightness": 0,
         "on": False,
     }
+
+
+def test_format_tool_parameters_strips_top_level_unsupported_keys() -> None:
+    """Top-level anyOf/oneOf/etc. are removed (e.g. HassStartTimer 400)."""
+    # "At least one of hours/minutes/seconds", like HassStartTimer, which
+    # converts to a schema with a top-level anyOf the function-tool API rejects.
+    schema = vol.Schema(
+        vol.All(
+            {
+                vol.Optional("name"): str,
+                vol.Optional("hours"): int,
+                vol.Optional("minutes"): int,
+                vol.Optional("seconds"): int,
+            },
+            vol.Any(
+                vol.Schema({vol.Required("hours"): int}, extra=vol.ALLOW_EXTRA),
+                vol.Schema({vol.Required("minutes"): int}, extra=vol.ALLOW_EXTRA),
+                vol.Schema({vol.Required("seconds"): int}, extra=vol.ALLOW_EXTRA),
+            ),
+        )
+    )
+    tool = SimpleNamespace(parameters=schema)
+    llm_api = SimpleNamespace(custom_serializer=None)
+
+    result = _format_tool_parameters(tool, llm_api)
+
+    assert result["type"] == "object"
+    assert "properties" in result
+    assert not any(key in result for key in _UNSUPPORTED_TOOL_SCHEMA_KEYS)
 
 
 def test_adjust_schema_enforces_strict_mode() -> None:
