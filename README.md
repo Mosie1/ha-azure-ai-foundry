@@ -74,6 +74,14 @@ For each agent you set:
 - **Microsoft Entra ID authentication** (currently API key only).
 - **Streaming responses** (the integration currently returns the full message
   at once rather than token-by-token).
+- **Adaptive guidance / "memory"** — persist lessons learned from recurring
+  tool-call mistakes (e.g. models over-filling optional intent slots like
+  `device_class`) and inject them into the system prompt on future turns, so
+  weaker models improve over time without manual prompt edits. This is likely
+  better implemented as a **separate, provider-agnostic integration** that
+  augments any conversation agent's prompt, rather than living here — feasibility
+  to be investigated. (Today, the tool-call retry loop already recovers from
+  these mistakes within a single conversation.)
 
 ## Official integration / brand assets
 
