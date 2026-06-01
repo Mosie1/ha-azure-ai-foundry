@@ -409,19 +409,27 @@ class AzureAIFoundryBaseLLMEntity(Entity):
                     f"Error talking to Azure AI Foundry: {err}"
                 ) from err
 
-            message = result.choices[0].message
-            model_args["messages"].extend(
-                [
-                    msg
-                    async for content in chat_log.async_add_delta_content_stream(
-                        self.entity_id, _transform_chat_message(message)
-                    )
-                    if (msg := _convert_content_to_chat_message(content))
-                ]
-            )
+            choice = result.choices[0]
+            if choice.finish_reason == "length":
+                raise HomeAssistantError(
+                    "Azure AI Foundry response was truncated (max tokens reached). "
+                    "Try increasing max tokens."
+                )
+
+            added_content = False
+            async for content in chat_log.async_add_delta_content_stream(
+                self.entity_id, _transform_chat_message(choice.message)
+            ):
+                added_content = True
+                if (msg := _convert_content_to_chat_message(content)) is not None:
+                    model_args["messages"].append(msg)
 
             if not chat_log.unresponded_tool_results:
                 break
+            if not added_content:
+                raise HomeAssistantError(
+                    "Azure AI Foundry returned an empty response."
+                )
 
     async def _async_handle_responses_api(
         self,
@@ -467,12 +475,30 @@ class AzureAIFoundryBaseLLMEntity(Entity):
                     f"Error talking to Azure AI Foundry: {err}"
                 ) from err
 
+            if getattr(response, "status", None) == "incomplete":
+                reason = getattr(
+                    getattr(response, "incomplete_details", None), "reason", None
+                )
+                raise HomeAssistantError(
+                    "Azure AI Foundry returned an incomplete response "
+                    f"({reason or 'unknown reason'}). For reasoning models this "
+                    "usually means the reasoning used up the token budget — try "
+                    "increasing max tokens or using a non-reasoning model."
+                )
+
+            added_content = False
             async for content in chat_log.async_add_delta_content_stream(
                 self.entity_id, _transform_response_output(response)
             ):
+                added_content = True
                 model_args["input"].extend(
                     _convert_content_to_response_input(content)
                 )
 
             if not chat_log.unresponded_tool_results:
                 break
+            if not added_content:
+                raise HomeAssistantError(
+                    "Azure AI Foundry returned an empty response. For reasoning "
+                    "models, try increasing max tokens or using a non-reasoning model."
+                )
