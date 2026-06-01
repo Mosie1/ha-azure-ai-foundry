@@ -107,6 +107,35 @@ def test_format_tool_parameters_strips_top_level_unsupported_keys() -> None:
     assert not any(key in result for key in _UNSUPPORTED_TOOL_SCHEMA_KEYS)
 
 
+def test_reasoning_item_round_trips_before_function_call() -> None:
+    """A reasoning model's state is replayed before the call it produced."""
+    from openai.types.responses import ResponseReasoningItem
+
+    from homeassistant.components import conversation
+    from homeassistant.helpers import llm
+
+    from custom_components.azure_ai_foundry.entity import (
+        _convert_content_to_response_input,
+    )
+
+    content = conversation.AssistantContent(
+        agent_id="x",
+        content=None,
+        tool_calls=[
+            llm.ToolInput(id="call_1", tool_name="GetLiveContext", tool_args={})
+        ],
+        native=ResponseReasoningItem(
+            id="rs_123", type="reasoning", summary=[], encrypted_content="ENC"
+        ),
+    )
+
+    items = _convert_content_to_response_input(content)
+
+    assert [item["type"] for item in items] == ["reasoning", "function_call"]
+    assert items[0]["id"] == "rs_123"
+    assert items[0]["encrypted_content"] == "ENC"
+
+
 def test_adjust_schema_enforces_strict_mode() -> None:
     """Objects get additionalProperties:false and all keys required."""
     schema = {

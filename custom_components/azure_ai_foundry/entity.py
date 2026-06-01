@@ -7,6 +7,7 @@ import json
 from typing import TYPE_CHECKING, Any, Literal
 
 import openai
+from openai.types.responses import ResponseReasoningItem, ResponseReasoningItemParam
 import voluptuous as vol
 from voluptuous_openapi import convert
 
@@ -229,6 +230,24 @@ def _convert_content_to_response_input(
         ]
 
     items: list[dict[str, Any]] = []
+
+    # Re-emit the reasoning item first so it chronologically precedes the
+    # message/function call it produced. This preserves a reasoning model's
+    # state across tool-call turns (mirrors openai_conversation).
+    if (
+        isinstance(content, conversation.AssistantContent)
+        and isinstance(content.native, ResponseReasoningItem)
+        and content.native.encrypted_content
+    ):
+        items.append(
+            ResponseReasoningItemParam(
+                type="reasoning",
+                id=content.native.id,
+                summary=[],
+                encrypted_content=content.native.encrypted_content,
+            )
+        )
+
     if content.content:
         role = "developer" if content.role == "system" else content.role
         items.append({"type": "message", "role": role, "content": content.content})
@@ -253,6 +272,7 @@ async def _transform_response_output(
     """Transform a Responses API response into a HA delta."""
     text_parts: list[str] = []
     tool_calls: list[llm.ToolInput] = []
+    reasoning: ResponseReasoningItem | None = None
 
     for item in response.output:
         if item.type == "message":
@@ -267,6 +287,10 @@ async def _transform_response_output(
                     tool_args=_decode_tool_arguments(item.arguments),
                 )
             )
+        elif item.type == "reasoning" and reasoning is None:
+            # Keep the reasoning item so it can be sent back next turn,
+            # preserving the model's reasoning state (reasoning models only).
+            reasoning = item
 
     data: conversation.AssistantContentDeltaDict = {
         "role": "assistant",
@@ -274,6 +298,8 @@ async def _transform_response_output(
     }
     if tool_calls:
         data["tool_calls"] = tool_calls
+    if reasoning is not None:
+        data["native"] = reasoning
     yield data
 
 
@@ -326,12 +352,17 @@ class AzureAIFoundryBaseLLMEntity(Entity):
 
         if api == "responses":
             model_args["max_output_tokens"] = max_tokens
+            # Manage reasoning state ourselves rather than server-side.
+            model_args["store"] = False
             if reasoning:
                 model_args["reasoning"] = {
                     "effort": options.get(
                         CONF_REASONING_EFFORT, RECOMMENDED_REASONING_EFFORT
                     )
                 }
+                # Ask for the encrypted reasoning so it can be replayed on the
+                # next turn, preserving the model's state across tool calls.
+                model_args["include"] = ["reasoning.encrypted_content"]
         else:  # chat
             if reasoning:
                 model_args["max_completion_tokens"] = max_tokens
