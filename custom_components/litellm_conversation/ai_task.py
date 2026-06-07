@@ -16,7 +16,7 @@ from homeassistant.util.json import json_loads
 
 from . import LiteLLMConversationConfigEntry
 from .const import (
-    CONF_IMAGE_DEPLOYMENT,
+    CONF_IMAGE_MODEL,
     CONF_IMAGE_QUALITY,
     CONF_IMAGE_SIZE,
     LOGGER,
@@ -56,7 +56,7 @@ class LiteLLMConversationTaskEntity(
         # TODO: advertise SUPPORT_ATTACHMENTS once attachment content is
         # converted into image/file inputs (see README roadmap).
         features = ai_task.AITaskEntityFeature.GENERATE_DATA
-        if subentry.data.get(CONF_IMAGE_DEPLOYMENT):
+        if subentry.data.get(CONF_IMAGE_MODEL):
             features |= ai_task.AITaskEntityFeature.GENERATE_IMAGE
         self._attr_supported_features = features
 
@@ -88,7 +88,7 @@ class LiteLLMConversationTaskEntity(
                 "Failed to parse structured response: %s. Response: %s", err, text
             )
             raise HomeAssistantError(
-                "Error with LiteLLM Conversation structured response"
+                "Error parsing the structured response"
             ) from err
 
         return ai_task.GenDataTaskResult(
@@ -101,18 +101,18 @@ class LiteLLMConversationTaskEntity(
         task: ai_task.GenImageTask,
         chat_log: conversation.ChatLog,
     ) -> ai_task.GenImageTaskResult:
-        """Handle a generate image task via the image deployment."""
+        """Handle a generate image task via the configured image model."""
         options = self.subentry.data
-        image_deployment = options.get(CONF_IMAGE_DEPLOYMENT)
-        if not image_deployment:
-            raise HomeAssistantError("No image deployment configured")
+        image_model = options.get(CONF_IMAGE_MODEL)
+        if not image_model:
+            raise HomeAssistantError("No image model configured")
 
         size = options.get(CONF_IMAGE_SIZE, RECOMMENDED_IMAGE_SIZE)
         quality = options.get(CONF_IMAGE_QUALITY, RECOMMENDED_IMAGE_QUALITY)
 
         try:
             response = await self._client.images.generate(
-                model=image_deployment,
+                model=image_model,
                 prompt=task.instructions,
                 size=size,
                 quality=quality,
@@ -121,9 +121,7 @@ class LiteLLMConversationTaskEntity(
             )
         except openai.AuthenticationError as err:
             self.entry.async_start_reauth(self.hass)
-            raise HomeAssistantError(
-                "LiteLLM Conversation authentication error"
-            ) from err
+            raise HomeAssistantError("LiteLLM proxy authentication error") from err
         except openai.OpenAIError as err:
             LOGGER.error("Error generating image: %s", err)
             raise HomeAssistantError(f"Error generating image: {err}") from err
@@ -151,6 +149,6 @@ class LiteLLMConversationTaskEntity(
             mime_type=mime_type,
             width=width,
             height=height,
-            model=image_deployment,
+            model=image_model,
             revised_prompt=getattr(image, "revised_prompt", None),
         )

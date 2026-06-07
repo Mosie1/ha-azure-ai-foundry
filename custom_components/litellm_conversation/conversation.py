@@ -25,12 +25,12 @@ async def async_setup_entry(
         if subentry.subentry_type != SUBENTRY_TYPE_CONVERSATION:
             continue
         async_add_entities(
-            [LiteLLMConversationConversationEntity(config_entry, subentry)],
+            [LiteLLMConversationEntity(config_entry, subentry)],
             config_subentry_id=subentry.subentry_id,
         )
 
 
-class LiteLLMConversationConversationEntity(
+class LiteLLMConversationEntity(
     conversation.ConversationEntity,
     conversation.AbstractConversationAgent,
     LiteLLMConversationBaseLLMEntity,

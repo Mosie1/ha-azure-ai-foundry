@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import get_async_client
 
-from .const import AZURE_API_VERSION, CONF_ENDPOINT, LOGGER
+from .const import CONF_BASE_URL, LOGGER
 
 PLATFORMS = (Platform.AI_TASK, Platform.CONVERSATION)
 
@@ -18,18 +18,15 @@ type LiteLLMConversationConfigEntry = ConfigEntry[openai.AsyncOpenAI]
 
 
 def _build_client(hass: HomeAssistant, data: dict) -> openai.AsyncOpenAI:
-    """Create an LiteLLM Conversation client targeting the OpenAI v1 endpoint.
+    """Create an OpenAI client pointed at the user's LiteLLM proxy.
 
-    The classic ``AzureOpenAI`` client routes to ``/openai/...?api-version=...``
-    and rewrites chat calls to ``/deployments/<model>/...``; that surface has no
-    Responses API. We therefore point a plain ``AsyncOpenAI`` client at the
-    version-less v1 endpoint, which serves both Chat Completions and Responses.
+    The LiteLLM proxy exposes an OpenAI-compatible API, so the standard
+    ``AsyncOpenAI`` client works directly against its base URL; the proxy
+    handles provider routing (Azure OpenAI, Foundry models, Claude, ...).
     """
-    endpoint = data[CONF_ENDPOINT].rstrip("/")
     return openai.AsyncOpenAI(
-        base_url=f"{endpoint}/openai/v1/",
+        base_url=data[CONF_BASE_URL],
         api_key=data[CONF_API_KEY],
-        default_query={"api-version": AZURE_API_VERSION},
         http_client=get_async_client(hass),
     )
 
@@ -40,19 +37,14 @@ async def async_setup_entry(
     """Set up LiteLLM Conversation from a config entry."""
     client = _build_client(hass, dict(entry.data))
 
-    # Validate the endpoint and credentials. Azure does not reliably expose a
-    # deployment listing, so a NotFoundError still means the endpoint is
-    # reachable and the key was accepted.
+    # Validate the proxy URL and credentials by listing the proxy's models.
     try:
         await client.with_options(timeout=10.0).models.list()
     except openai.AuthenticationError as err:
-        LOGGER.error("Invalid LiteLLM Conversation credentials: %s", err)
+        LOGGER.error("Invalid LiteLLM proxy credentials: %s", err)
         raise ConfigEntryAuthFailed("Invalid authentication") from err
-    except openai.NotFoundError:
-        # Endpoint reachable, credentials accepted, no listing available.
-        pass
     except openai.APIConnectionError as err:
-        raise ConfigEntryNotReady("Unable to connect to LiteLLM Conversation") from err
+        raise ConfigEntryNotReady("Unable to connect to the LiteLLM proxy") from err
     except openai.OpenAIError as err:
         raise ConfigEntryNotReady(str(err)) from err
 

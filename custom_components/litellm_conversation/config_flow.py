@@ -34,14 +34,13 @@ from homeassistant.helpers.typing import VolDictType
 
 from . import _build_client
 from .const import (
-    CONF_DEPLOYMENT_NAME,
-    CONF_ENDPOINT,
-    CONF_IMAGE_DEPLOYMENT,
+    CONF_BASE_URL,
+    CONF_IMAGE_MODEL,
     CONF_IMAGE_QUALITY,
     CONF_IMAGE_SIZE,
     CONF_LLM_HASS_API,
     CONF_MAX_TOKENS,
-    CONF_MODEL_FAMILY,
+    CONF_MODEL,
     CONF_PROMPT,
     CONF_REASONING_EFFORT,
     CONF_RECOMMENDED,
@@ -53,27 +52,23 @@ from .const import (
     IMAGE_QUALITY_OPTIONS,
     IMAGE_SIZE_OPTIONS,
     LOGGER,
-    MODEL_FAMILY_AUTO,
-    MODEL_FAMILY_OPENAI,
-    MODEL_FAMILY_OTHER,
     REASONING_EFFORT_OPTIONS,
     RECOMMENDED_AI_TASK_OPTIONS,
     RECOMMENDED_CONVERSATION_OPTIONS,
-    RECOMMENDED_DEPLOYMENT_NAME,
     RECOMMENDED_IMAGE_QUALITY,
     RECOMMENDED_IMAGE_SIZE,
     RECOMMENDED_MAX_TOKENS,
+    RECOMMENDED_MODEL,
     RECOMMENDED_REASONING_EFFORT,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
     SUBENTRY_TYPE_AI_TASK_DATA,
     SUBENTRY_TYPE_CONVERSATION,
-    resolve_api,
 )
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_ENDPOINT): TextSelector(
+        vol.Required(CONF_BASE_URL): TextSelector(
             TextSelectorConfig(type=TextSelectorType.URL)
         ),
         vol.Required(CONF_API_KEY): TextSelector(
@@ -82,23 +77,11 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     }
 )
 
-MODEL_FAMILY_SELECTOR = SelectSelector(
-    SelectSelectorConfig(
-        options=[MODEL_FAMILY_AUTO, MODEL_FAMILY_OPENAI, MODEL_FAMILY_OTHER],
-        mode=SelectSelectorMode.DROPDOWN,
-        translation_key=CONF_MODEL_FAMILY,
-    )
-)
-
 
 async def _validate_connection(hass, data: dict[str, Any]) -> None:
-    """Try to connect to the endpoint. Raises openai errors on failure."""
+    """Connect to the proxy and list models. Raises openai errors on failure."""
     client = _build_client(hass, data)
-    try:
-        await client.with_options(timeout=10.0).models.list()
-    except openai.NotFoundError:
-        # Endpoint reachable and credentials accepted, listing unsupported.
-        pass
+    await client.with_options(timeout=10.0).models.list()
 
 
 class LiteLLMConversationConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -113,7 +96,7 @@ class LiteLLMConversationConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            self._async_abort_entries_match({CONF_ENDPOINT: user_input[CONF_ENDPOINT]})
+            self._async_abort_entries_match({CONF_BASE_URL: user_input[CONF_BASE_URL]})
             try:
                 await _validate_connection(self.hass, user_input)
             except openai.AuthenticationError:
@@ -121,7 +104,7 @@ class LiteLLMConversationConfigFlow(ConfigFlow, domain=DOMAIN):
             except openai.APIConnectionError:
                 errors["base"] = "cannot_connect"
             except openai.OpenAIError:
-                LOGGER.exception("Unexpected error validating LiteLLM Conversation")
+                LOGGER.exception("Unexpected error validating the LiteLLM proxy")
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
@@ -203,6 +186,7 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
     """Flow to create or reconfigure a conversation / AI task agent."""
 
     options: dict[str, Any]
+    _model_options: list[str]
 
     @property
     def _is_new(self) -> bool:
@@ -212,6 +196,29 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
     @property
     def _is_conversation(self) -> bool:
         return self._subentry_type == SUBENTRY_TYPE_CONVERSATION
+
+    async def _async_model_options(self) -> list[str]:
+        """Fetch the model ids the proxy exposes (best effort)."""
+        client = self._get_entry().runtime_data
+        try:
+            page = await client.with_options(timeout=10.0).models.list()
+        except openai.OpenAIError as err:
+            LOGGER.warning("Could not list models from the LiteLLM proxy: %s", err)
+            return []
+        return sorted(model.id for model in page.data)
+
+    def _model_selector(self, models: list[str]) -> Any:
+        """A dropdown of proxy models, with free-text entry as a fallback."""
+        if not models:
+            return str
+        return SelectSelector(
+            SelectSelectorConfig(
+                options=[SelectOptionDict(value=m, label=m) for m in models],
+                mode=SelectSelectorMode.DROPDOWN,
+                custom_value=True,
+                sort=True,
+            )
+        )
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -234,7 +241,7 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
         """Collect name, prompt, LLM API and the recommended toggle."""
-        # The parent entry must be loaded to reconfigure a subentry.
+        # The parent entry must be loaded to fetch models / reconfigure.
         if self._get_entry().state != ConfigEntryState.LOADED:
             return self.async_abort(reason="entry_not_loaded")
 
@@ -268,9 +275,7 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
             schema[
                 vol.Optional(
                     CONF_PROMPT,
-                    description={
-                        "suggested_value": self.options.get(CONF_PROMPT)
-                    },
+                    description={"suggested_value": self.options.get(CONF_PROMPT)},
                 )
             ] = TemplateSelector()
             schema[
@@ -296,29 +301,24 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
             )
         ] = bool
 
-        return self.async_show_form(
-            step_id="init", data_schema=vol.Schema(schema)
-        )
+        return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
 
     async def async_step_advanced(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
-        """Collect deployment, model family and generation parameters."""
+        """Collect the model and generation parameters."""
         if user_input is not None:
             self.options.update(user_input)
+            if self._is_conversation:
+                return self._async_finish()
             return await self.async_step_model()
 
+        models = await self._async_model_options()
         schema: VolDictType = {
             vol.Required(
-                CONF_DEPLOYMENT_NAME,
-                default=self.options.get(
-                    CONF_DEPLOYMENT_NAME, RECOMMENDED_DEPLOYMENT_NAME
-                ),
-            ): str,
-            vol.Required(
-                CONF_MODEL_FAMILY,
-                default=self.options.get(CONF_MODEL_FAMILY, MODEL_FAMILY_AUTO),
-            ): MODEL_FAMILY_SELECTOR,
+                CONF_MODEL,
+                default=self.options.get(CONF_MODEL, RECOMMENDED_MODEL),
+            ): self._model_selector(models),
             vol.Optional(
                 CONF_MAX_TOKENS,
                 default=self.options.get(CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS),
@@ -331,6 +331,17 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
                 CONF_TOP_P,
                 default=self.options.get(CONF_TOP_P, RECOMMENDED_TOP_P),
             ): NumberSelector(NumberSelectorConfig(min=0, max=1, step=0.05)),
+            vol.Optional(
+                CONF_REASONING_EFFORT,
+                description={
+                    "suggested_value": self.options.get(CONF_REASONING_EFFORT)
+                },
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=REASONING_EFFORT_OPTIONS,
+                    translation_key=CONF_REASONING_EFFORT,
+                )
+            ),
         }
 
         return self.async_show_form(
@@ -340,7 +351,7 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
     async def async_step_model(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
-        """Collect model-specific options (reasoning, image generation)."""
+        """Collect AI-Task image-generation options."""
         if user_input is not None:
             # Drop empty optional values so they fall back to defaults.
             self.options.update(
@@ -348,65 +359,28 @@ class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
             )
             return self._async_finish()
 
-        schema: VolDictType = {}
+        schema: VolDictType = {
+            vol.Optional(
+                CONF_IMAGE_MODEL,
+                description={"suggested_value": self.options.get(CONF_IMAGE_MODEL)},
+            ): str,
+            vol.Optional(
+                CONF_IMAGE_SIZE,
+                default=self.options.get(CONF_IMAGE_SIZE, RECOMMENDED_IMAGE_SIZE),
+            ): SelectSelector(
+                SelectSelectorConfig(options=IMAGE_SIZE_OPTIONS, custom_value=True)
+            ),
+            vol.Optional(
+                CONF_IMAGE_QUALITY,
+                default=self.options.get(
+                    CONF_IMAGE_QUALITY, RECOMMENDED_IMAGE_QUALITY
+                ),
+            ): SelectSelector(
+                SelectSelectorConfig(options=IMAGE_QUALITY_OPTIONS, custom_value=True)
+            ),
+        }
 
-        family = self.options.get(CONF_MODEL_FAMILY, MODEL_FAMILY_AUTO)
-        deployment = self.options.get(CONF_DEPLOYMENT_NAME, "")
-        if resolve_api(family, deployment) == "responses":
-            schema[
-                vol.Optional(
-                    CONF_REASONING_EFFORT,
-                    description={
-                        "suggested_value": self.options.get(
-                            CONF_REASONING_EFFORT, RECOMMENDED_REASONING_EFFORT
-                        )
-                    },
-                )
-            ] = SelectSelector(
-                SelectSelectorConfig(
-                    options=REASONING_EFFORT_OPTIONS,
-                    translation_key=CONF_REASONING_EFFORT,
-                )
-            )
-
-        if not self._is_conversation:
-            schema[
-                vol.Optional(
-                    CONF_IMAGE_DEPLOYMENT,
-                    description={
-                        "suggested_value": self.options.get(CONF_IMAGE_DEPLOYMENT)
-                    },
-                )
-            ] = str
-            schema[
-                vol.Optional(
-                    CONF_IMAGE_SIZE,
-                    default=self.options.get(CONF_IMAGE_SIZE, RECOMMENDED_IMAGE_SIZE),
-                )
-            ] = SelectSelector(
-                SelectSelectorConfig(
-                    options=IMAGE_SIZE_OPTIONS, custom_value=True
-                )
-            )
-            schema[
-                vol.Optional(
-                    CONF_IMAGE_QUALITY,
-                    default=self.options.get(
-                        CONF_IMAGE_QUALITY, RECOMMENDED_IMAGE_QUALITY
-                    ),
-                )
-            ] = SelectSelector(
-                SelectSelectorConfig(
-                    options=IMAGE_QUALITY_OPTIONS, custom_value=True
-                )
-            )
-
-        if not schema:
-            return self._async_finish()
-
-        return self.async_show_form(
-            step_id="model", data_schema=vol.Schema(schema)
-        )
+        return self.async_show_form(step_id="model", data_schema=vol.Schema(schema))
 
     def _async_finish(self) -> SubentryFlowResult:
         """Create or update the subentry from collected options."""

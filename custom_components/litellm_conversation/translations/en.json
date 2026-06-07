@@ -2,19 +2,20 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to LiteLLM Conversation",
-        "description": "Enter the endpoint and API key of your LiteLLM Conversation / Azure OpenAI resource.",
+        "title": "Connect to your LiteLLM proxy",
+        "description": "Enter the base URL and API key of your LiteLLM proxy server.",
         "data": {
-          "endpoint": "Endpoint",
+          "base_url": "Base URL",
           "api_key": "API key"
         },
         "data_description": {
-          "endpoint": "The base URL of your LiteLLM Conversation or Azure OpenAI resource, shown under Keys and Endpoint in the Azure portal."
+          "base_url": "The base URL of your LiteLLM proxy, including the host and port.",
+          "api_key": "The proxy master key or a virtual key."
         }
       },
       "reauth_confirm": {
-        "title": "Re-authenticate LiteLLM Conversation",
-        "description": "The API key for your LiteLLM Conversation resource is no longer valid.",
+        "title": "Re-authenticate the LiteLLM proxy",
+        "description": "The API key for your LiteLLM proxy is no longer valid.",
         "data": {
           "api_key": "API key"
         }
@@ -26,7 +27,7 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "This endpoint is already configured",
+      "already_configured": "This proxy URL is already configured",
       "reauth_successful": "Re-authentication was successful"
     }
   },
@@ -56,24 +57,15 @@
         "advanced": {
           "title": "Model settings",
           "data": {
-            "deployment_name": "Deployment name",
-            "model_family": "Model family",
+            "model": "Model",
             "max_tokens": "Maximum tokens to return in response",
             "temperature": "Temperature",
-            "top_p": "Top P"
-          },
-          "data_description": {
-            "deployment_name": "The Azure deployment name (not the model name).",
-            "model_family": "Forces the Responses vs Chat Completions API. Use Auto-detect unless your deployment name is non-standard."
-          }
-        },
-        "model": {
-          "title": "Advanced model settings",
-          "data": {
+            "top_p": "Top P",
             "reasoning_effort": "Reasoning effort"
           },
           "data_description": {
-            "reasoning_effort": "How many reasoning tokens the model should spend (reasoning models only)."
+            "model": "A model name your LiteLLM proxy exposes.",
+            "reasoning_effort": "Set this only for reasoning models; it replaces temperature/top-p."
           }
         }
       }
@@ -98,41 +90,32 @@
         "advanced": {
           "title": "Model settings",
           "data": {
-            "deployment_name": "Deployment name",
-            "model_family": "Model family",
+            "model": "Model",
             "max_tokens": "Maximum tokens to return in response",
             "temperature": "Temperature",
-            "top_p": "Top P"
+            "top_p": "Top P",
+            "reasoning_effort": "Reasoning effort"
           },
           "data_description": {
-            "deployment_name": "The Azure deployment name (not the model name).",
-            "model_family": "Forces the Responses vs Chat Completions API. Use Auto-detect unless your deployment name is non-standard."
+            "model": "A model name your LiteLLM proxy exposes.",
+            "reasoning_effort": "Set this only for reasoning models; it replaces temperature/top-p."
           }
         },
         "model": {
-          "title": "Advanced model settings",
+          "title": "Image generation",
           "data": {
-            "reasoning_effort": "Reasoning effort",
-            "image_deployment": "Image deployment name",
+            "image_model": "Image model",
             "image_size": "Image size",
             "image_quality": "Image quality"
           },
           "data_description": {
-            "reasoning_effort": "How many reasoning tokens the model should spend (reasoning models only).",
-            "image_deployment": "Deployment of a DALL-E / gpt-image model. Enables image generation when set."
+            "image_model": "A model on your proxy that supports image generation (e.g. dall-e-3, gpt-image-1). Enables image generation when set."
           }
         }
       }
     }
   },
   "selector": {
-    "model_family": {
-      "options": {
-        "auto": "Auto-detect",
-        "openai": "OpenAI (Responses API)",
-        "other": "Other (Chat Completions)"
-      }
-    },
     "reasoning_effort": {
       "options": {
         "low": "Low",

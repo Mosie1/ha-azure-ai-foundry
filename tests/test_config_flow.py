@@ -13,14 +13,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.litellm_conversation.const import (
-    CONF_ENDPOINT,
+    CONF_BASE_URL,
     DOMAIN,
     SUBENTRY_TYPE_AI_TASK_DATA,
     SUBENTRY_TYPE_CONVERSATION,
 )
 
 USER_INPUT = {
-    CONF_ENDPOINT: "https://example.openai.azure.com",
+    CONF_BASE_URL: "http://localhost:4000",
     CONF_API_KEY: "test-key",
 }
 
@@ -39,7 +39,7 @@ def mark_conversation_loaded(hass: HomeAssistant) -> None:
 async def test_user_flow_success(
     hass: HomeAssistant, mock_client: MagicMock
 ) -> None:
-    """A valid endpoint + key creates an entry with two default agents."""
+    """A valid base URL + key creates an entry with two default agents."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )

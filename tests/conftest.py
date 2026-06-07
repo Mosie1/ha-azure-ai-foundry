@@ -11,7 +11,7 @@ from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
 
 from custom_components.litellm_conversation.const import (
-    CONF_ENDPOINT,
+    CONF_BASE_URL,
     DOMAIN,
     RECOMMENDED_AI_TASK_OPTIONS,
     RECOMMENDED_CONVERSATION_OPTIONS,
@@ -35,7 +35,7 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
         domain=DOMAIN,
         title="LiteLLM Conversation",
         data={
-            CONF_ENDPOINT: "https://example.openai.azure.com",
+            CONF_BASE_URL: "http://localhost:4000",
             CONF_API_KEY: "test-key",
         },
         subentries_data=[
@@ -64,9 +64,8 @@ def mock_client() -> Generator[MagicMock]:
         "custom_components.litellm_conversation.openai.AsyncOpenAI"
     ) as mock_ctor:
         client = mock_ctor.return_value
-        client.models.list = AsyncMock(return_value=[])
+        client.models.list = AsyncMock(return_value=MagicMock(data=[]))
         client.with_options.return_value = client
         client.chat.completions.create = AsyncMock()
-        client.responses.create = AsyncMock()
         client.images.generate = AsyncMock()
         yield client
