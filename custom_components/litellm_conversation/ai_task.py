@@ -1,4 +1,4 @@
-"""AI Task entity for Azure AI Foundry."""
+"""AI Task entity for LiteLLM Conversation."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util.json import json_loads
 
-from . import AzureAIFoundryConfigEntry
+from . import LiteLLMConversationConfigEntry
 from .const import (
     CONF_IMAGE_DEPLOYMENT,
     CONF_IMAGE_QUALITY,
@@ -24,12 +24,12 @@ from .const import (
     RECOMMENDED_IMAGE_SIZE,
     SUBENTRY_TYPE_AI_TASK_DATA,
 )
-from .entity import AzureAIFoundryBaseLLMEntity
+from .entity import LiteLLMConversationBaseLLMEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: AzureAIFoundryConfigEntry,
+    config_entry: LiteLLMConversationConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up AI Task entities from their subentries."""
@@ -37,19 +37,19 @@ async def async_setup_entry(
         if subentry.subentry_type != SUBENTRY_TYPE_AI_TASK_DATA:
             continue
         async_add_entities(
-            [AzureAIFoundryTaskEntity(config_entry, subentry)],
+            [LiteLLMConversationTaskEntity(config_entry, subentry)],
             config_subentry_id=subentry.subentry_id,
         )
 
 
-class AzureAIFoundryTaskEntity(
+class LiteLLMConversationTaskEntity(
     ai_task.AITaskEntity,
-    AzureAIFoundryBaseLLMEntity,
+    LiteLLMConversationBaseLLMEntity,
 ):
-    """Azure AI Foundry AI Task entity."""
+    """LiteLLM Conversation AI Task entity."""
 
     def __init__(
-        self, entry: AzureAIFoundryConfigEntry, subentry: ConfigSubentry
+        self, entry: LiteLLMConversationConfigEntry, subentry: ConfigSubentry
     ) -> None:
         """Initialize the entity."""
         super().__init__(entry, subentry)
@@ -88,7 +88,7 @@ class AzureAIFoundryTaskEntity(
                 "Failed to parse structured response: %s. Response: %s", err, text
             )
             raise HomeAssistantError(
-                "Error with Azure AI Foundry structured response"
+                "Error with LiteLLM Conversation structured response"
             ) from err
 
         return ai_task.GenDataTaskResult(
@@ -122,7 +122,7 @@ class AzureAIFoundryTaskEntity(
         except openai.AuthenticationError as err:
             self.entry.async_start_reauth(self.hass)
             raise HomeAssistantError(
-                "Azure AI Foundry authentication error"
+                "LiteLLM Conversation authentication error"
             ) from err
         except openai.OpenAIError as err:
             LOGGER.error("Error generating image: %s", err)

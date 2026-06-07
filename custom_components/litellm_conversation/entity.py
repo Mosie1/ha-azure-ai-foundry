@@ -1,4 +1,4 @@
-"""Shared base entity and dual-API request handling for Azure AI Foundry."""
+"""Shared base entity and dual-API request handling for LiteLLM Conversation."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ from .const import (
 )
 
 if TYPE_CHECKING:
-    from . import AzureAIFoundryConfigEntry
+    from . import LiteLLMConversationConfigEntry
 
 
 def _decode_tool_arguments(arguments: str) -> Any:
@@ -320,14 +320,14 @@ async def _transform_response_output(
 # --- Base entity ------------------------------------------------------------
 
 
-class AzureAIFoundryBaseLLMEntity(Entity):
-    """Shared base for Azure AI Foundry conversation and AI task entities."""
+class LiteLLMConversationBaseLLMEntity(Entity):
+    """Shared base for LiteLLM Conversation conversation and AI task entities."""
 
     _attr_has_entity_name = True
     _attr_name = None
 
     def __init__(
-        self, entry: AzureAIFoundryConfigEntry, subentry: ConfigSubentry
+        self, entry: LiteLLMConversationConfigEntry, subentry: ConfigSubentry
     ) -> None:
         """Initialize the entity."""
         self.entry = entry
@@ -400,7 +400,7 @@ class AzureAIFoundryBaseLLMEntity(Entity):
         deployment = self.subentry.data.get(CONF_DEPLOYMENT_NAME, "")
         if is_anthropic_deployment(deployment):
             raise HomeAssistantError(
-                "Claude models on Azure AI Foundry use Anthropic's native "
+                "Claude models on LiteLLM Conversation use Anthropic's native "
                 "Messages API, which this integration does not support yet. "
                 "Use an OpenAI-compatible deployment (e.g. gpt-4o-mini) instead."
             )
@@ -455,17 +455,17 @@ class AzureAIFoundryBaseLLMEntity(Entity):
                 result = await client.chat.completions.create(**model_args)
             except openai.AuthenticationError as err:
                 self.entry.async_start_reauth(self.hass)
-                raise HomeAssistantError("Azure AI Foundry authentication error") from err
+                raise HomeAssistantError("LiteLLM Conversation authentication error") from err
             except openai.OpenAIError as err:
-                LOGGER.error("Error talking to Azure AI Foundry: %s", err)
+                LOGGER.error("Error talking to LiteLLM Conversation: %s", err)
                 raise HomeAssistantError(
-                    f"Error talking to Azure AI Foundry: {err}"
+                    f"Error talking to LiteLLM Conversation: {err}"
                 ) from err
 
             choice = result.choices[0]
             if choice.finish_reason == "length":
                 raise HomeAssistantError(
-                    "Azure AI Foundry response was truncated (max tokens reached). "
+                    "LiteLLM Conversation response was truncated (max tokens reached). "
                     "Try increasing max tokens."
                 )
 
@@ -481,7 +481,7 @@ class AzureAIFoundryBaseLLMEntity(Entity):
                 break
             if not added_content:
                 raise HomeAssistantError(
-                    "Azure AI Foundry returned an empty response."
+                    "LiteLLM Conversation returned an empty response."
                 )
 
     async def _async_handle_responses_api(
@@ -521,11 +521,11 @@ class AzureAIFoundryBaseLLMEntity(Entity):
                 response = await client.responses.create(**model_args)
             except openai.AuthenticationError as err:
                 self.entry.async_start_reauth(self.hass)
-                raise HomeAssistantError("Azure AI Foundry authentication error") from err
+                raise HomeAssistantError("LiteLLM Conversation authentication error") from err
             except openai.OpenAIError as err:
-                LOGGER.error("Error talking to Azure AI Foundry: %s", err)
+                LOGGER.error("Error talking to LiteLLM Conversation: %s", err)
                 raise HomeAssistantError(
-                    f"Error talking to Azure AI Foundry: {err}"
+                    f"Error talking to LiteLLM Conversation: {err}"
                 ) from err
 
             if getattr(response, "status", None) == "incomplete":
@@ -533,7 +533,7 @@ class AzureAIFoundryBaseLLMEntity(Entity):
                     getattr(response, "incomplete_details", None), "reason", None
                 )
                 raise HomeAssistantError(
-                    "Azure AI Foundry returned an incomplete response "
+                    "LiteLLM Conversation returned an incomplete response "
                     f"({reason or 'unknown reason'}). For reasoning models this "
                     "usually means the reasoning used up the token budget — try "
                     "increasing max tokens or using a non-reasoning model."
@@ -552,6 +552,6 @@ class AzureAIFoundryBaseLLMEntity(Entity):
                 break
             if not added_content:
                 raise HomeAssistantError(
-                    "Azure AI Foundry returned an empty response. For reasoning "
+                    "LiteLLM Conversation returned an empty response. For reasoning "
                     "models, try increasing max tokens or using a non-reasoning model."
                 )

@@ -1,4 +1,4 @@
-"""Constants for the Azure AI Foundry integration."""
+"""Constants for the LiteLLM Conversation integration."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Final, Literal
 from homeassistant.const import CONF_LLM_HASS_API  # noqa: F401  (re-exported for convenience)
 from homeassistant.helpers import llm
 
-DOMAIN: Final = "azure_ai_foundry"
+DOMAIN: Final = "litellm_conversation"
 LOGGER: logging.Logger = logging.getLogger(__package__)
 
 # Connection / main config entry
@@ -65,8 +65,8 @@ IMAGE_QUALITY_OPTIONS: Final = ["standard", "hd"]
 
 MAX_TOOL_ITERATIONS: Final = 10
 
-DEFAULT_CONVERSATION_NAME: Final = "Azure AI Foundry Conversation"
-DEFAULT_AI_TASK_NAME: Final = "Azure AI Foundry Task"
+DEFAULT_CONVERSATION_NAME: Final = "LiteLLM Conversation Conversation"
+DEFAULT_AI_TASK_NAME: Final = "LiteLLM Conversation Task"
 
 RECOMMENDED_CONVERSATION_OPTIONS: Final = {
     CONF_RECOMMENDED: True,

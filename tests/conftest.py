@@ -1,4 +1,4 @@
-"""Fixtures for Azure AI Foundry tests."""
+"""Fixtures for LiteLLM Conversation tests."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import pytest
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
 
-from custom_components.azure_ai_foundry.const import (
+from custom_components.litellm_conversation.const import (
     CONF_ENDPOINT,
     DOMAIN,
     RECOMMENDED_AI_TASK_OPTIONS,
@@ -33,7 +33,7 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
     """Return a mock config entry with one conversation and one AI task agent."""
     entry = MockConfigEntry(
         domain=DOMAIN,
-        title="Azure AI Foundry",
+        title="LiteLLM Conversation",
         data={
             CONF_ENDPOINT: "https://example.openai.azure.com",
             CONF_API_KEY: "test-key",
@@ -61,7 +61,7 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
 def mock_client() -> Generator[MagicMock]:
     """Patch the AsyncOpenAI client used by the integration."""
     with patch(
-        "custom_components.azure_ai_foundry.openai.AsyncOpenAI"
+        "custom_components.litellm_conversation.openai.AsyncOpenAI"
     ) as mock_ctor:
         client = mock_ctor.return_value
         client.models.list = AsyncMock(return_value=[])

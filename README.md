@@ -1,8 +1,8 @@
-# Azure AI Foundry for Home Assistant
+# LiteLLM Conversation for Home Assistant
 
-A Home Assistant custom integration that uses [Azure AI Foundry](https://ai.azure.com/) (Azure OpenAI / Azure AI model deployments) to power **Conversation** (Assist) and **AI Tasks**.
+A Home Assistant custom integration that uses [LiteLLM Conversation](https://ai.azure.com/) (Azure OpenAI / Azure AI model deployments) to power **Conversation** (Assist) and **AI Tasks**.
 
-It targets the modern Home Assistant entity APIs (chat log, LLM tool calling, AI Task structured data & image generation) and supports the full range of models you can deploy in Azure AI Foundry:
+It targets the modern Home Assistant entity APIs (chat log, LLM tool calling, AI Task structured data & image generation) and supports the full range of models you can deploy in LiteLLM Conversation:
 
 - **OpenAI-family** deployments (GPT-4o, GPT-4.1, o-series, GPT-5, …) are served through the **Responses API**.
 - **Other model families** (DeepSeek-R1, Llama, Mistral, Phi, …) are served through the **Chat Completions API**.
@@ -23,15 +23,15 @@ The integration auto-detects which API to use from the deployment name, with a p
 ## Requirements
 
 - Home Assistant 2025.7 or newer.
-- An Azure AI Foundry / Azure OpenAI resource with at least one **deployment**.
+- An LiteLLM Conversation / Azure OpenAI resource with at least one **deployment**.
 - The resource **endpoint URL** and an **API key**.
 
 ## Installation (HACS)
 
 1. In HACS, add this repository as a **custom repository** (category: *Integration*).
-2. Install **Azure AI Foundry**.
+2. Install **LiteLLM Conversation**.
 3. Restart Home Assistant.
-4. Go to **Settings → Devices & Services → Add Integration → Azure AI Foundry**.
+4. Go to **Settings → Devices & Services → Add Integration → LiteLLM Conversation**.
 
 ## Configuration
 
@@ -66,7 +66,7 @@ For each agent you set:
 
 ## Roadmap / TODO
 
-- **Anthropic Claude models** — Claude on Azure AI Foundry is served by
+- **Anthropic Claude models** — Claude on LiteLLM Conversation is served by
   Anthropic's **native Messages API** (`<resource>.services.ai.azure.com/anthropic/v1/messages`),
   not the OpenAI-compatible surface this integration uses, so Claude deployments
   are not yet supported (they currently raise a clear error). Adding support
@@ -94,7 +94,7 @@ For each agent you set:
 
 ## Official integration / brand assets
 
-For a future Home Assistant core submission, brand assets (`icon.png`, `logo.png`) must be contributed to the [home-assistant/brands](https://github.com/home-assistant/brands) repository under `custom_integrations/azure_ai_foundry/`.
+For a future Home Assistant core submission, brand assets (`icon.png`, `logo.png`) must be contributed to the [home-assistant/brands](https://github.com/home-assistant/brands) repository under `custom_integrations/litellm_conversation/`.
 
 ## License
 

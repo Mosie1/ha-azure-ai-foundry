@@ -1,4 +1,4 @@
-"""Tests for the Azure AI Foundry config flow."""
+"""Tests for the LiteLLM Conversation config flow."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.azure_ai_foundry.const import (
+from custom_components.litellm_conversation.const import (
     CONF_ENDPOINT,
     DOMAIN,
     SUBENTRY_TYPE_AI_TASK_DATA,
@@ -46,7 +46,7 @@ async def test_user_flow_success(
     assert result["type"] is FlowResultType.FORM
 
     with patch(
-        "custom_components.azure_ai_foundry.async_setup_entry", return_value=True
+        "custom_components.litellm_conversation.async_setup_entry", return_value=True
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], USER_INPUT

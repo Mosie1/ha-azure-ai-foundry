@@ -1,14 +1,14 @@
 {
-  "domain": "azure_ai_foundry",
-  "name": "Azure AI Foundry",
+  "domain": "litellm_conversation",
+  "name": "LiteLLM Conversation",
   "after_dependencies": ["assist_pipeline", "intent"],
   "codeowners": ["@Mosie1"],
   "config_flow": true,
   "dependencies": ["conversation"],
-  "documentation": "https://github.com/Mosie1/ha-azure-ai-foundry",
+  "documentation": "https://github.com/Mosie1/ha-litellm-conversation",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/Mosie1/ha-azure-ai-foundry/issues",
+  "issue_tracker": "https://github.com/Mosie1/ha-litellm-conversation/issues",
   "requirements": ["openai==2.21.0"],
   "version": "0.1.0"
 }

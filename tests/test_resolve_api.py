@@ -9,7 +9,7 @@ import voluptuous as vol
 
 from homeassistant.util import slugify
 
-from custom_components.azure_ai_foundry.const import (
+from custom_components.litellm_conversation.const import (
     MODEL_FAMILY_AUTO,
     MODEL_FAMILY_OPENAI,
     MODEL_FAMILY_OTHER,
@@ -17,7 +17,7 @@ from custom_components.azure_ai_foundry.const import (
     is_reasoning_deployment,
     resolve_api,
 )
-from custom_components.azure_ai_foundry.entity import (
+from custom_components.litellm_conversation.entity import (
     _UNSUPPORTED_TOOL_SCHEMA_KEYS,
     _adjust_schema,
     _decode_tool_arguments,
@@ -132,7 +132,7 @@ def test_reasoning_item_round_trips_before_function_call() -> None:
     from homeassistant.components import conversation
     from homeassistant.helpers import llm
 
-    from custom_components.azure_ai_foundry.entity import (
+    from custom_components.litellm_conversation.entity import (
         _convert_content_to_response_input,
     )
 

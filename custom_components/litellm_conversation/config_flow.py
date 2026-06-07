@@ -1,4 +1,4 @@
-"""Config flow for the Azure AI Foundry integration."""
+"""Config flow for the LiteLLM Conversation integration."""
 
 from __future__ import annotations
 
@@ -101,8 +101,8 @@ async def _validate_connection(hass, data: dict[str, Any]) -> None:
         pass
 
 
-class AzureAIFoundryConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Azure AI Foundry."""
+class LiteLLMConversationConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for LiteLLM Conversation."""
 
     VERSION = 1
     MINOR_VERSION = 1
@@ -121,11 +121,11 @@ class AzureAIFoundryConfigFlow(ConfigFlow, domain=DOMAIN):
             except openai.APIConnectionError:
                 errors["base"] = "cannot_connect"
             except openai.OpenAIError:
-                LOGGER.exception("Unexpected error validating Azure AI Foundry")
+                LOGGER.exception("Unexpected error validating LiteLLM Conversation")
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
-                    title="Azure AI Foundry",
+                    title="LiteLLM Conversation",
                     data=user_input,
                     subentries=[
                         {
@@ -194,12 +194,12 @@ class AzureAIFoundryConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> dict[str, type[ConfigSubentryFlow]]:
         """Return the subentry types supported by this integration."""
         return {
-            SUBENTRY_TYPE_CONVERSATION: AzureAIFoundrySubentryFlowHandler,
-            SUBENTRY_TYPE_AI_TASK_DATA: AzureAIFoundrySubentryFlowHandler,
+            SUBENTRY_TYPE_CONVERSATION: LiteLLMConversationSubentryFlowHandler,
+            SUBENTRY_TYPE_AI_TASK_DATA: LiteLLMConversationSubentryFlowHandler,
         }
 
 
-class AzureAIFoundrySubentryFlowHandler(ConfigSubentryFlow):
+class LiteLLMConversationSubentryFlowHandler(ConfigSubentryFlow):
     """Flow to create or reconfigure a conversation / AI task agent."""
 
     options: dict[str, Any]

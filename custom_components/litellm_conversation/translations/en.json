@@ -2,19 +2,19 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Azure AI Foundry",
-        "description": "Enter the endpoint and API key of your Azure AI Foundry / Azure OpenAI resource.",
+        "title": "Connect to LiteLLM Conversation",
+        "description": "Enter the endpoint and API key of your LiteLLM Conversation / Azure OpenAI resource.",
         "data": {
           "endpoint": "Endpoint",
           "api_key": "API key"
         },
         "data_description": {
-          "endpoint": "The base URL of your Azure AI Foundry or Azure OpenAI resource, shown under Keys and Endpoint in the Azure portal."
+          "endpoint": "The base URL of your LiteLLM Conversation or Azure OpenAI resource, shown under Keys and Endpoint in the Azure portal."
         }
       },
       "reauth_confirm": {
-        "title": "Re-authenticate Azure AI Foundry",
-        "description": "The API key for your Azure AI Foundry resource is no longer valid.",
+        "title": "Re-authenticate LiteLLM Conversation",
+        "description": "The API key for your LiteLLM Conversation resource is no longer valid.",
         "data": {
           "api_key": "API key"
         }

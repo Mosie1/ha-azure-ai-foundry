@@ -1,4 +1,4 @@
-"""Conversation agent for Azure AI Foundry."""
+"""Conversation agent for LiteLLM Conversation."""
 
 from __future__ import annotations
 
@@ -10,14 +10,14 @@ from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import AzureAIFoundryConfigEntry
+from . import LiteLLMConversationConfigEntry
 from .const import CONF_LLM_HASS_API, CONF_PROMPT, SUBENTRY_TYPE_CONVERSATION
-from .entity import AzureAIFoundryBaseLLMEntity
+from .entity import LiteLLMConversationBaseLLMEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: AzureAIFoundryConfigEntry,
+    config_entry: LiteLLMConversationConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up conversation entities from their subentries."""
@@ -25,20 +25,20 @@ async def async_setup_entry(
         if subentry.subentry_type != SUBENTRY_TYPE_CONVERSATION:
             continue
         async_add_entities(
-            [AzureAIFoundryConversationEntity(config_entry, subentry)],
+            [LiteLLMConversationConversationEntity(config_entry, subentry)],
             config_subentry_id=subentry.subentry_id,
         )
 
 
-class AzureAIFoundryConversationEntity(
+class LiteLLMConversationConversationEntity(
     conversation.ConversationEntity,
     conversation.AbstractConversationAgent,
-    AzureAIFoundryBaseLLMEntity,
+    LiteLLMConversationBaseLLMEntity,
 ):
-    """Azure AI Foundry conversation agent."""
+    """LiteLLM Conversation conversation agent."""
 
     def __init__(
-        self, entry: AzureAIFoundryConfigEntry, subentry: ConfigSubentry
+        self, entry: LiteLLMConversationConfigEntry, subentry: ConfigSubentry
     ) -> None:
         """Initialize the agent."""
         super().__init__(entry, subentry)

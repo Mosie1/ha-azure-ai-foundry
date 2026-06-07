@@ -1,1 +1,1 @@
-"""Tests for the Azure AI Foundry integration."""
+"""Tests for the LiteLLM Conversation integration."""
